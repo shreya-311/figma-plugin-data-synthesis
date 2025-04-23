@@ -17,6 +17,17 @@
             padding: 16px;
             border-radius: 8px;
         }
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin: 8px 0;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+        }
         button {
             background: #18A0FB;
             color: white;
@@ -25,30 +36,52 @@
             border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
-            margin: 4px;
-        }
-        button:hover {
-            background: #0D8DE3;
-        }
-        textarea {
+            margin: 4px 0;
             width: 100%;
-            height: 100px;
-            margin: 8px 0;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            transition: background-color 0.2s ease;
         }
-        .file-upload {
-            margin: 16px 0;
-        }
-        .visualization-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
+        button:hover:not(:disabled) {
+            background: #0D8DE3;
         }
         button:disabled {
             background: #ccc;
             cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .helper-text {
+            color: #666;
+            font-size: 12px;
+            margin: 4px 0;
+        }
+        h3 {
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .visualization-buttons {
+            display: grid;
+            gap: 8px;
+        }
+        .file-upload {
+            margin: 12px 0;
+        }
+        .file-upload input {
+            margin: 8px 0;
+        }
+        .divider {
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+            margin: 12px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .divider::before,
+        .divider::after {
+            content: "";
+            flex: 1;
+            border-bottom: 1px solid #ccc;
         }
     </style>
 </head>
@@ -56,121 +89,104 @@
     <div class="container">
         <div class="section">
             <h3>Data Input</h3>
+            <textarea 
+                id="notes" 
+                placeholder="Enter your research notes, observations, or raw data here"
+                oninput="checkInput()">
+            </textarea>
+            <div class="helper-text">Enter your research notes above</div>
+            
+            <div class="divider">Add additional files (optional)</div>
+            
             <div class="file-upload">
-                <input type="file" id="fileUpload" multiple accept=".pdf,.jpg,.jpeg,.png,.csv,.txt,.mp3,.mp4">
+                <input 
+                    type="file" 
+                    id="fileUpload" 
+                    multiple 
+                    accept=".pdf,.jpg,.jpeg,.png,.csv,.txt,.mp3,.mp4"
+                    onchange="checkInput()">
+                <div class="helper-text">Supported: PDF, images, CSV, text, audio/video files</div>
             </div>
-            <textarea id="contextInfo" placeholder="Enter session context, demographics, etc."></textarea>
-            <button id="processData" disabled>Process Data</button>
+
+            <button id="processData" disabled onclick="processUserData()">
+                Process Data
+            </button>
         </div>
 
         <div class="section">
             <h3>Visualizations</h3>
             <div class="visualization-buttons">
-                <button id="generateThemes" disabled>Generate Themes</button>
-                <button id="createWordCloud" disabled>Create Word Cloud</button>
-                <button id="showJourneyMap" disabled>Show Journey Map</button>
-                <button id="showSentiments" disabled>Show Sentiments</button>
+                <button id="generateThemes" disabled onclick="createVisualization('themes')">Generate Themes</button>
+                <button id="createWordCloud" disabled onclick="createVisualization('wordcloud')">Create Word Cloud</button>
+                <button id="showJourneyMap" disabled onclick="createVisualization('journey')">Show Journey Map</button>
+                <button id="showSentiments" disabled onclick="createVisualization('sentiments')">Show Sentiments</button>
             </div>
-        </div>
-
-        <div class="section">
-            <button id="createArtboard">Create New Artboard</button>
         </div>
     </div>
 
     <script>
-        document.getElementById('fileUpload').addEventListener('change', function() {
-            document.getElementById('processData').disabled = false;
-        });
+        // Get DOM elements
+        const notesInput = document.getElementById('notes');
+        const fileInput = document.getElementById('fileUpload');
+        const processButton = document.getElementById('processData');
 
-        document.getElementById('processData').addEventListener('click', function() {
-            parent.postMessage({ pluginMessage: { type: 'process-data' } }, '*');
-        });
+        function checkInput() {
+            const hasNotes = notesInput.value.trim().length > 0;
+            const hasFiles = fileInput.files && fileInput.files.length > 0;
+            processButton.disabled = !(hasNotes || hasFiles);
+            console.log('Input checked:', { hasNotes, hasFiles, buttonDisabled: processButton.disabled });
+        }
 
-        document.getElementById('createArtboard').addEventListener('click', function() {
-            parent.postMessage({ pluginMessage: { type: 'create-artboard' } }, '*');
-        });
-
-        // Sample data for testing
-        const sampleData = {
-            themes: [
-                {
-                    name: "User Experience",
-                    frequency: 15,
-                    quotes: ["The interface is confusing", "Navigation is not intuitive"]
-                },
-                {
-                    name: "Performance",
-                    frequency: 10,
-                    quotes: ["The app is slow", "Takes too long to load"]
+        async function processUserData() {
+            console.log('Process button clicked');
+            
+            // Create a simple object with just the notes
+            const data = {
+                notes: notesInput.value.trim(),
+                hasFiles: fileInput.files && fileInput.files.length > 0
+            };
+            
+            console.log('Sending data to plugin:', data);
+            
+            parent.postMessage({
+                pluginMessage: {
+                    type: 'process-data',
+                    data: data
                 }
-            ],
-            words: [
-                { text: "experience", size: 48 },
-                { text: "interface", size: 36 },
-                { text: "navigation", size: 24 },
-                { text: "performance", size: 36 }
-            ],
-            journey: [
-                { phase: "Discovery", description: "Initial contact" },
-                { phase: "Evaluation", description: "Testing period" },
-                { phase: "Purchase", description: "Decision making" },
-                { phase: "Onboarding", description: "First use" }
-            ],
-            sentiments: {
-                positive: 45,
-                neutral: 30,
-                negative: 25
+            }, '*');
+        }
+
+        function createVisualization(type) {
+            console.log('Creating visualization:', type);
+            parent.postMessage({
+                pluginMessage: {
+                    type: 'create-visualization',
+                    data: { type: type }
+                }
+            }, '*');
+        }
+
+        // Message handler for plugin responses
+        window.onmessage = function(event) {
+            console.log('Received message from plugin:', event.data);
+            
+            if (event.data.pluginMessage) {
+                const msg = event.data.pluginMessage;
+                console.log('Plugin message type:', msg.type);
+                
+                if (msg.type === 'processing-complete') {
+                    console.log('Enabling visualization buttons');
+                    document.getElementById('generateThemes').disabled = false;
+                    document.getElementById('createWordCloud').disabled = false;
+                    document.getElementById('showJourneyMap').disabled = false;
+                    document.getElementById('showSentiments').disabled = false;
+                }
             }
         };
 
-        // Visualization button handlers
-        document.getElementById('generateThemes').addEventListener('click', function() {
-            parent.postMessage({
-                pluginMessage: {
-                    type: 'create-visualization',
-                    data: { type: 'themes', data: sampleData.themes }
-                }
-            }, '*');
-        });
-
-        document.getElementById('createWordCloud').addEventListener('click', function() {
-            parent.postMessage({
-                pluginMessage: {
-                    type: 'create-visualization',
-                    data: { type: 'wordcloud', data: sampleData.words }
-                }
-            }, '*');
-        });
-
-        document.getElementById('showJourneyMap').addEventListener('click', function() {
-            parent.postMessage({
-                pluginMessage: {
-                    type: 'create-visualization',
-                    data: { type: 'journey', data: sampleData.journey }
-                }
-            }, '*');
-        });
-
-        document.getElementById('showSentiments').addEventListener('click', function() {
-            parent.postMessage({
-                pluginMessage: {
-                    type: 'create-visualization',
-                    data: { type: 'sentiments', data: sampleData.sentiments }
-                }
-            }, '*');
-        });
-
-        // Listen for messages from the plugin code
-        onmessage = (event) => {
-            if (event.data.pluginMessage.type === 'processing-complete') {
-                // Enable visualization buttons
-                document.getElementById('generateThemes').disabled = false;
-                document.getElementById('createWordCloud').disabled = false;
-                document.getElementById('showJourneyMap').disabled = false;
-                document.getElementById('showSentiments').disabled = false;
-            }
-        };
+        // Initial cleanup and check
+        notesInput.value = notesInput.value.trim();
+        checkInput();
     </script>
 </body>
 </html> 

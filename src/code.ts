@@ -27,46 +27,191 @@ interface JourneyStep {
   description: string;
 }
 
+interface ReportData {
+  projectName: string;
+  goals: string;
+  methods: string;
+  notes: string;
+}
+
+interface ProcessData {
+  notes: string;
+  files: FileList | null;
+}
+
+// Track the last created artboard position
+let lastArtboardX = 0;
+let lastArtboardY = 0;
+const ARTBOARD_SPACING = 100;
+
+// Show UI with enough height for all elements
 figma.showUI(__html__, { width: 450, height: 600 });
 
 // Handle messages from the UI
-figma.ui.onmessage = async (msg: { type: string; data?: any }) => {
-  if (msg.type === 'create-artboard') {
-    const nodes: SceneNode[] = [];
-    
-    // Create a new frame
-    const frame = figma.createFrame();
-    frame.name = "Research Synthesis";
-    frame.resize(1920, 1080);
-    frame.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1 } }];
-    
-    nodes.push(frame);
-    
-    // Add title
-    const title = figma.createText();
-    await figma.loadFontAsync({ family: "Inter", style: "Bold" });
-    title.fontName = { family: "Inter", style: "Bold" };
-    title.characters = "Research Synthesis";
-    title.fontSize = 48;
-    title.x = 50;
-    title.y = 50;
-    frame.appendChild(title);
+figma.ui.onmessage = async (msg) => {
+  console.log('Plugin received message:', msg);
 
-    figma.viewport.scrollAndZoomIntoView(nodes);
-    figma.currentPage.selection = nodes;
-  }
+  try {
+    if (msg.type === 'process-data') {
+      console.log('Processing data:', msg.data);
+      
+      // Store some sample data
+      const processedData = {
+        themes: [{ name: "Theme 1", quotes: ["Quote 1"] }],
+        words: [{ text: "Sample", size: 24 }],
+        journey: [{ phase: "Start", description: "Beginning" }],
+        sentiments: { positive: 60, neutral: 30, negative: 10 }
+      };
 
-  if (msg.type === 'create-visualization' && msg.data) {
-    const data: VisualizationData = msg.data;
-    await createVisualization(data);
-  }
+      // Store the processed data
+      await figma.clientStorage.setAsync('processedData', processedData);
+      console.log('Data processed and stored');
+      
+      // Enable visualization buttons
+      figma.ui.postMessage({ type: 'processing-complete' });
+    }
 
-  if (msg.type === 'process-data') {
-    // This would typically involve processing the uploaded files
-    // For now, we'll just acknowledge receipt
-    figma.ui.postMessage({ type: 'processing-complete' });
+    if (msg.type === 'create-visualization') {
+      console.log('Creating visualization:', msg.data);
+      
+      // Create a frame
+      const frame = figma.createFrame();
+      frame.name = `${msg.data.type} Visualization`;
+      frame.resize(800, 600);
+      frame.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1 } }];
+
+      // Add a title
+      await figma.loadFontAsync({ family: "Inter", style: "Regular" });
+      const title = figma.createText();
+      title.characters = frame.name;
+      title.x = 40;
+      title.y = 40;
+      frame.appendChild(title);
+
+      // Position the frame
+      if (figma.currentPage.selection.length > 0) {
+        const lastSelection = figma.currentPage.selection[0];
+        frame.x = lastSelection.x + lastSelection.width + 100;
+        frame.y = lastSelection.y;
+      }
+
+      // Select and focus on the new frame
+      figma.currentPage.selection = [frame];
+      figma.viewport.scrollAndZoomIntoView([frame]);
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    figma.ui.postMessage({ 
+      type: 'error', 
+      message: error instanceof Error ? error.message : 'An unknown error occurred'
+    });
   }
 };
+
+async function createNewArtboard(name: string = "Research Synthesis"): Promise<FrameNode> {
+  const nodes: SceneNode[] = [];
+  
+  // Create a new frame
+  const frame = figma.createFrame();
+  frame.name = name;
+  frame.resize(1920, 1080);
+  frame.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1 } }];
+  
+  // Position the new artboard next to the last one
+  frame.x = lastArtboardX;
+  frame.y = lastArtboardY;
+  
+  // Update the position for the next artboard
+  lastArtboardX += frame.width + ARTBOARD_SPACING;
+  
+  // If we've gone too far right, start a new row
+  if (lastArtboardX > 5000) {  // Arbitrary limit
+    lastArtboardX = 0;
+    lastArtboardY += frame.height + ARTBOARD_SPACING;
+  }
+  
+  nodes.push(frame);
+  figma.viewport.scrollAndZoomIntoView(nodes);
+  figma.currentPage.selection = nodes;
+  
+  return frame;
+}
+
+async function generateResearchReport(data: ReportData) {
+  // Create a new artboard for the report
+  const reportFrame = await createNewArtboard("Research Report");
+  
+  await figma.loadFontAsync({ family: "Inter", style: "Bold" });
+  await figma.loadFontAsync({ family: "Inter", style: "Regular" });
+
+  let yOffset = 50;
+  const padding = 50;
+  
+  // Helper function to create text
+  async function createText(content: string, isBold: boolean = false, size: number = 14): Promise<TextNode> {
+    const text = figma.createText();
+    text.fontName = { family: "Inter", style: isBold ? "Bold" : "Regular" };
+    text.characters = content;
+    text.fontSize = size;
+    text.x = padding;
+    text.y = yOffset;
+    reportFrame.appendChild(text);
+    yOffset += text.height + 20;
+    return text;
+  }
+
+  // Create sections
+  const date = new Date().toLocaleDateString();
+  await createText(data.projectName || "Untitled Research", true, 36);
+  await createText(date, false, 14);
+  
+  // Executive Summary
+  yOffset += 20;
+  await createText("Executive Summary", true, 24);
+  if (data.notes) {
+    // In a real implementation, we would use NLP to generate a summary
+    await createText(data.notes.slice(0, 200) + "...");
+  } else {
+    const missingInfo = await createText("⚠️ Add research notes to generate an executive summary");
+    missingInfo.fills = [{ type: 'SOLID', color: { r: 0.7, g: 0.5, b: 0 } }];
+  }
+
+  // Goals
+  yOffset += 20;
+  await createText("Research Goals", true, 24);
+  if (data.goals) {
+    await createText(data.goals);
+  } else {
+    const missingInfo = await createText("⚠️ Add research goals");
+    missingInfo.fills = [{ type: 'SOLID', color: { r: 0.7, g: 0.5, b: 0 } }];
+  }
+
+  // Methods
+  yOffset += 20;
+  await createText("Research Methods", true, 24);
+  if (data.methods) {
+    await createText(data.methods);
+  } else {
+    const missingInfo = await createText("⚠️ Add research methods");
+    missingInfo.fills = [{ type: 'SOLID', color: { r: 0.7, g: 0.5, b: 0 } }];
+  }
+
+  // Insights
+  yOffset += 20;
+  await createText("Key Insights", true, 24);
+  if (data.notes) {
+    // In a real implementation, we would use NLP to extract insights
+    await createText("• Insight 1\n• Insight 2\n• Insight 3");
+  } else {
+    const missingInfo = await createText("⚠️ Add research notes to generate insights");
+    missingInfo.fills = [{ type: 'SOLID', color: { r: 0.7, g: 0.5, b: 0 } }];
+  }
+
+  // Next Steps
+  yOffset += 20;
+  await createText("Next Steps", true, 24);
+  await createText("• Review and validate insights with stakeholders\n• Prioritize findings\n• Create action items");
+}
 
 async function createVisualization(data: VisualizationData) {
   const frame = figma.createFrame();
