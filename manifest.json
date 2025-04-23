@@ -1,0 +1,13 @@
+{
+  "name": "Research Data Synthesis",
+  "id": "research-data-synthesis",
+  "api": "1.0.0",
+  "main": "dist/code.js",
+  "ui": "dist/ui.html",
+  "editorType": ["figma"],
+  "networkAccess": {
+    "allowedDomains": ["*"],
+    "reasoning": "The plugin needs to process various types of research data files and may need to access external APIs for data analysis and visualization"
+  },
+  "permissions": ["currentuser"]
+} 

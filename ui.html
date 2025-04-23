@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Data Synthesis Helper</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="input-section">
+            <h2>Data Input</h2>
+            <div class="file-upload">
+                <label for="fileUpload">Upload Files (PDF, Images, CSV, etc.)</label>
+                <input type="file" id="fileUpload" multiple accept=".pdf,.jpg,.jpeg,.png,.csv,.txt,.mp3,.mp4">
+            </div>
+            
+            <div class="text-input">
+                <label for="contextInfo">Session Context</label>
+                <textarea id="contextInfo" placeholder="Enter session context, demographics, etc."></textarea>
+            </div>
+
+            <div class="data-type-selector">
+                <label>Data Type:</label>
+                <select id="dataType">
+                    <option value="interview">Interview</option>
+                    <option value="survey">Survey</option>
+                    <option value="observation">Observation</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="visualization-section">
+            <h2>Visualizations</h2>
+            <div class="viz-controls">
+                <button id="generateThemes">Generate Themes</button>
+                <button id="createWordCloud">Create Word Cloud</button>
+                <button id="showJourneyMap">Show Journey Map</button>
+                <button id="showSentiments">Show Sentiments</button>
+            </div>
+            <div id="visualizationArea"></div>
+        </div>
+
+        <div class="action-buttons">
+            <button id="createArtboard">Create Artboard</button>
+            <button id="processData">Process Data</button>
+        </div>
+    </div>
+    <script src="ui.js"></script>
+</body>
+</html> 
