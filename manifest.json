@@ -6,7 +6,7 @@
   "ui": "dist/ui.html",
   "editorType": ["figma"],
   "networkAccess": {
-    "allowedDomains": ["*"],
+    "allowedDomains": ["https://80cc-2607-fea8-9356-2200-99ad-8976-aa98-4639.ngrok-free.app"],
     "reasoning": "The plugin needs to process various types of research data files and may need to access external APIs for data analysis and visualization"
   },
   "permissions": ["currentuser"]

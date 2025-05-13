@@ -1,192 +1,85 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Analysis Plugin</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             margin: 0;
             padding: 20px;
+            color: #333;
         }
+
         .container {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+            max-width: 100%;
         }
-        .section {
-            background: #f5f5f5;
-            padding: 16px;
-            border-radius: 8px;
-        }
+
         textarea {
             width: 100%;
-            height: 100px;
-            margin: 8px 0;
+            min-height: 200px;
+            margin: 10px 0;
             padding: 8px;
             border: 1px solid #ccc;
             border-radius: 4px;
-            font-family: inherit;
-            font-size: 14px;
             resize: vertical;
         }
+
         button {
-            background: #18A0FB;
+            background-color: #18A0FB;
             color: white;
             border: none;
             padding: 8px 16px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
-            margin: 4px 0;
-            width: 100%;
-            transition: background-color 0.2s ease;
         }
-        button:hover:not(:disabled) {
-            background: #0D8DE3;
-        }
+
         button:disabled {
-            background: #ccc;
+            background-color: #ccc;
             cursor: not-allowed;
-            opacity: 0.7;
         }
-        .helper-text {
-            color: #666;
-            font-size: 12px;
-            margin: 4px 0;
+
+        button:hover:not(:disabled) {
+            background-color: #1490E4;
         }
-        h3 {
-            margin: 0 0 12px 0;
-            font-size: 16px;
-            font-weight: 600;
+
+        #errorMessage, #successMessage {
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            display: none;
         }
-        .visualization-buttons {
-            display: grid;
-            gap: 8px;
+
+        #errorMessage {
+            background-color: #FFF1F0;
+            color: #F24822;
+            border: 1px solid #F24822;
         }
-        .file-upload {
-            margin: 12px 0;
-        }
-        .file-upload input {
-            margin: 8px 0;
-        }
-        .divider {
-            text-align: center;
-            color: #666;
-            font-size: 12px;
-            margin: 12px 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .divider::before,
-        .divider::after {
-            content: "";
-            flex: 1;
-            border-bottom: 1px solid #ccc;
+
+        #successMessage {
+            background-color: #F6FFED;
+            color: #14AE5C;
+            border: 1px solid #14AE5C;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="section">
-            <h3>Data Input</h3>
-            <textarea 
-                id="notes" 
-                placeholder="Enter your research notes, observations, or raw data here"
-                oninput="checkInput()">
-            </textarea>
-            <div class="helper-text">Enter your research notes above</div>
-            
-            <div class="divider">Add additional files (optional)</div>
-            
-            <div class="file-upload">
-                <input 
-                    type="file" 
-                    id="fileUpload" 
-                    multiple 
-                    accept=".pdf,.jpg,.jpeg,.png,.csv,.txt,.mp3,.mp4"
-                    onchange="checkInput()">
-                <div class="helper-text">Supported: PDF, images, CSV, text, audio/video files</div>
-            </div>
-
-            <button id="processData" disabled onclick="processUserData()">
-                Process Data
-            </button>
+        <h2>Research Analysis</h2>
+        
+        <div>
+            <label for="contextInfo">Enter your research notes:</label>
+            <textarea id="contextInfo" placeholder="Paste your research text here..."></textarea>
         </div>
 
-        <div class="section">
-            <h3>Visualizations</h3>
-            <div class="visualization-buttons">
-                <button id="generateThemes" disabled onclick="createVisualization('themes')">Generate Themes</button>
-                <button id="createWordCloud" disabled onclick="createVisualization('wordcloud')">Create Word Cloud</button>
-                <button id="showJourneyMap" disabled onclick="createVisualization('journey')">Show Journey Map</button>
-                <button id="showSentiments" disabled onclick="createVisualization('sentiments')">Show Sentiments</button>
-            </div>
-        </div>
+        <button id="analyzeWithAI">Analyze with AI</button>
+
+        <div id="errorMessage"></div>
+        <div id="successMessage"></div>
     </div>
 
-    <script>
-        // Get DOM elements
-        const notesInput = document.getElementById('notes');
-        const fileInput = document.getElementById('fileUpload');
-        const processButton = document.getElementById('processData');
-
-        function checkInput() {
-            const hasNotes = notesInput.value.trim().length > 0;
-            const hasFiles = fileInput.files && fileInput.files.length > 0;
-            processButton.disabled = !(hasNotes || hasFiles);
-            console.log('Input checked:', { hasNotes, hasFiles, buttonDisabled: processButton.disabled });
-        }
-
-        async function processUserData() {
-            console.log('Process button clicked');
-            
-            // Create a simple object with just the notes
-            const data = {
-                notes: notesInput.value.trim(),
-                hasFiles: fileInput.files && fileInput.files.length > 0
-            };
-            
-            console.log('Sending data to plugin:', data);
-            
-            parent.postMessage({
-                pluginMessage: {
-                    type: 'process-data',
-                    data: data
-                }
-            }, '*');
-        }
-
-        function createVisualization(type) {
-            console.log('Creating visualization:', type);
-            parent.postMessage({
-                pluginMessage: {
-                    type: 'create-visualization',
-                    data: { type: type }
-                }
-            }, '*');
-        }
-
-        // Message handler for plugin responses
-        window.onmessage = function(event) {
-            console.log('Received message from plugin:', event.data);
-            
-            if (event.data.pluginMessage) {
-                const msg = event.data.pluginMessage;
-                console.log('Plugin message type:', msg.type);
-                
-                if (msg.type === 'processing-complete') {
-                    console.log('Enabling visualization buttons');
-                    document.getElementById('generateThemes').disabled = false;
-                    document.getElementById('createWordCloud').disabled = false;
-                    document.getElementById('showJourneyMap').disabled = false;
-                    document.getElementById('showSentiments').disabled = false;
-                }
-            }
-        };
-
-        // Initial cleanup and check
-        notesInput.value = notesInput.value.trim();
-        checkInput();
-    </script>
+    <script src="ui.js"></script>
 </body>
 </html> 
