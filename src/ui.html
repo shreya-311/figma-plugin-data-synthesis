@@ -1,176 +1,85 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Analysis Plugin</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             margin: 0;
             padding: 20px;
+            color: #333;
         }
+
         .container {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+            max-width: 100%;
         }
-        .section {
-            background: #f5f5f5;
-            padding: 16px;
-            border-radius: 8px;
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            margin: 10px 0;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical;
         }
+
         button {
-            background: #18A0FB;
+            background-color: #18A0FB;
             color: white;
             border: none;
             padding: 8px 16px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
-            margin: 4px;
         }
-        button:hover {
-            background: #0D8DE3;
-        }
-        textarea {
-            width: 100%;
-            height: 100px;
-            margin: 8px 0;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        .file-upload {
-            margin: 16px 0;
-        }
-        .visualization-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
+
         button:disabled {
-            background: #ccc;
+            background-color: #ccc;
             cursor: not-allowed;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #1490E4;
+        }
+
+        #errorMessage, #successMessage {
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        #errorMessage {
+            background-color: #FFF1F0;
+            color: #F24822;
+            border: 1px solid #F24822;
+        }
+
+        #successMessage {
+            background-color: #F6FFED;
+            color: #14AE5C;
+            border: 1px solid #14AE5C;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="section">
-            <h3>Data Input</h3>
-            <div class="file-upload">
-                <input type="file" id="fileUpload" multiple accept=".pdf,.jpg,.jpeg,.png,.csv,.txt,.mp3,.mp4">
-            </div>
-            <textarea id="contextInfo" placeholder="Enter session context, demographics, etc."></textarea>
-            <button id="processData" disabled>Process Data</button>
+        <h2>Research Analysis</h2>
+        
+        <div>
+            <label for="contextInfo">Enter your research notes:</label>
+            <textarea id="contextInfo" placeholder="Paste your research text here..."></textarea>
         </div>
 
-        <div class="section">
-            <h3>Visualizations</h3>
-            <div class="visualization-buttons">
-                <button id="generateThemes" disabled>Generate Themes</button>
-                <button id="createWordCloud" disabled>Create Word Cloud</button>
-                <button id="showJourneyMap" disabled>Show Journey Map</button>
-                <button id="showSentiments" disabled>Show Sentiments</button>
-            </div>
-        </div>
+        <button id="analyzeWithAI">Analyze with AI</button>
 
-        <div class="section">
-            <button id="createArtboard">Create New Artboard</button>
-        </div>
+        <div id="errorMessage"></div>
+        <div id="successMessage"></div>
     </div>
 
-    <script>
-        document.getElementById('fileUpload').addEventListener('change', function() {
-            document.getElementById('processData').disabled = false;
-        });
-
-        document.getElementById('processData').addEventListener('click', function() {
-            parent.postMessage({ pluginMessage: { type: 'process-data' } }, '*');
-        });
-
-        document.getElementById('createArtboard').addEventListener('click', function() {
-            parent.postMessage({ pluginMessage: { type: 'create-artboard' } }, '*');
-        });
-
-        // Sample data for testing
-        const sampleData = {
-            themes: [
-                {
-                    name: "User Experience",
-                    frequency: 15,
-                    quotes: ["The interface is confusing", "Navigation is not intuitive"]
-                },
-                {
-                    name: "Performance",
-                    frequency: 10,
-                    quotes: ["The app is slow", "Takes too long to load"]
-                }
-            ],
-            words: [
-                { text: "experience", size: 48 },
-                { text: "interface", size: 36 },
-                { text: "navigation", size: 24 },
-                { text: "performance", size: 36 }
-            ],
-            journey: [
-                { phase: "Discovery", description: "Initial contact" },
-                { phase: "Evaluation", description: "Testing period" },
-                { phase: "Purchase", description: "Decision making" },
-                { phase: "Onboarding", description: "First use" }
-            ],
-            sentiments: {
-                positive: 45,
-                neutral: 30,
-                negative: 25
-            }
-        };
-
-        // Visualization button handlers
-        document.getElementById('generateThemes').addEventListener('click', function() {
-            parent.postMessage({
-                pluginMessage: {
-                    type: 'create-visualization',
-                    data: { type: 'themes', data: sampleData.themes }
-                }
-            }, '*');
-        });
-
-        document.getElementById('createWordCloud').addEventListener('click', function() {
-            parent.postMessage({
-                pluginMessage: {
-                    type: 'create-visualization',
-                    data: { type: 'wordcloud', data: sampleData.words }
-                }
-            }, '*');
-        });
-
-        document.getElementById('showJourneyMap').addEventListener('click', function() {
-            parent.postMessage({
-                pluginMessage: {
-                    type: 'create-visualization',
-                    data: { type: 'journey', data: sampleData.journey }
-                }
-            }, '*');
-        });
-
-        document.getElementById('showSentiments').addEventListener('click', function() {
-            parent.postMessage({
-                pluginMessage: {
-                    type: 'create-visualization',
-                    data: { type: 'sentiments', data: sampleData.sentiments }
-                }
-            }, '*');
-        });
-
-        // Listen for messages from the plugin code
-        onmessage = (event) => {
-            if (event.data.pluginMessage.type === 'processing-complete') {
-                // Enable visualization buttons
-                document.getElementById('generateThemes').disabled = false;
-                document.getElementById('createWordCloud').disabled = false;
-                document.getElementById('showJourneyMap').disabled = false;
-                document.getElementById('showSentiments').disabled = false;
-            }
-        };
-    </script>
+    <script src="ui.js"></script>
 </body>
 </html> 

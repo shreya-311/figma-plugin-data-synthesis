@@ -26,6 +26,12 @@
                     <option value="observation">Observation</option>
                 </select>
             </div>
+
+            <div>
+                <textarea id="researchText" rows="10" cols="50" placeholder="Paste your research notes here..."></textarea>
+                <button id="analyzeButton">Analyze with AI</button>
+                <div id="results" style="margin-top: 20px;"></div>
+            </div>
         </div>
 
         <div class="visualization-section">
@@ -45,5 +51,58 @@
         </div>
     </div>
     <script src="ui.js"></script>
+    <script>
+    // Add immediate console log to check if script runs
+    console.log('Script loaded');
+
+    document.getElementById('analyzeButton').onclick = async () => {
+        // Add console log to check if button click works
+        console.log('Button clicked');
+        console.log('Text value:', document.getElementById('researchText').value);
+
+        const text = document.getElementById('researchText').value;
+        const resultsDiv = document.getElementById('results');
+        
+        // Show loading state
+        resultsDiv.innerHTML = 'Analyzing...';
+        
+        try {
+            console.log('Making fetch request...');
+            const response = await fetch('https://80cc-2607-fea8-9356-2200-99ad-8976-aa98-4639.ngrok-free.app/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text })
+            });
+            console.log('Fetch response received:', response);
+
+            const data = await response.json();
+            console.log('Parsed response data:', data);
+            
+            if (data.error) {
+                resultsDiv.innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
+                return;
+            }
+
+            // Display themes in a formatted list
+            const themesList = data.themes
+                .map(theme => `<li>${theme}</li>`)
+                .join('');
+            
+            resultsDiv.innerHTML = `
+                <h3>Analysis Results:</h3>
+                <ul>${themesList}</ul>
+            `;
+        } catch (error) {
+            console.error('Detailed error:', error);
+            resultsDiv.innerHTML = `
+                <p style="color: red;">
+                    Error connecting to server. Check the console for details.
+                </p>
+            `;
+        }
+    };
+    </script>
 </body>
 </html> 
